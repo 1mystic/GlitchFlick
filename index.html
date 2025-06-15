@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>AI Video Studio - Fireship Style</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+
+    <script>
+        function loadResponsiveVoice() {
+            const key = document.getElementById('responsiveVoiceApiKey').value.trim();
+            if (key) {
+                const script = document.createElement('script');
+                script.src = `https://code.responsivevoice.org/responsivevoice.js?key=${key}`;
+                document.head.appendChild(script);
+            } else {
+                console.warn('ResponsiveVoice key is missing.');
+            }
+        }
+
+        // Call loadResponsiveVoice when the page loads or when needed
+        document.addEventListener('DOMContentLoaded', loadResponsiveVoice);
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            color: #E2E8F0;
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: rgba(51, 65, 85, 0.8);
+            color: #E2E8F0;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(71, 85, 105, 0.8);
+            transform: translateY(-1px);
+        }
+        
+        .input-field {
+            background: rgba(30, 41, 59, 0.8);
+            border: 2px solid rgba(51, 65, 85, 0.5);
+            border-radius: 12px;
+            padding: 16px;
+            color: #E2E8F0;
+            width: 100%;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #6366F1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+        
+        .progress-container {
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%);
+            border-radius: 12px;
+            transition: width 0.5s ease;
+            height: 8px;
+        }
+        
+        .scene-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 2px solid transparent;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            aspect-ratio: 1;
+        }
+        
+        .scene-card:hover {
+            border-color: #6366F1;
+            transform: scale(1.02);
+        }
+        
+        .scene-card.selected {
+            border-color: #8B5CF6;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+        
+        .spinner {
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 2px solid #fff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fireship-gradient {
+            background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 25%, #45B7D1 50%, #96CEB4 75%, #FFEAA7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .video-preview {
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            position: relative;
+        }
+        
+        .overlay-controls {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .overlay-controls:hover {
+            opacity: 1;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background: rgba(239, 68, 68, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-4 md:p-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <header class="mb-12 text-center">
+                <h1 class="text-5xl font-bold fireship-gradient mb-4">
+                    AI Video Studio
+                </h1>
+                <p class="text-xl text-slate-400 max-w-2xl mx-auto">
+                    Create engaging Fireship-style videos with AI-generated scripts, meme images, and natural voiceovers
+                </p>
+            </header>
+
+            <!-- Configuration Panel -->
+            <div class="glass-card mb-8">
+                <h3 class="text-lg font-semibold mb-4 flex items-center">
+                    <span class="material-icons mr-2">settings</span>
+                    API Configuration
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Gemini API Key</label>
+                        <input type="password" id="geminiApiKey" class="input-field" 
+                               placeholder="Enter your Gemini API key">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">ResponsiveVoice API Key</label>
+                        <input type="text" id="responsiveVoiceApiKey" class="input-field"
+                               placeholder="Enter your ResponsiveVoice API key">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Video Style</label>
+                        <select id="videoStyle" class="input-field">
+                            <option value="fireship">Fireship Style</option>
+                            <option value="educational">Educational</option>
+                            <option value="humorous">Humorous</option>
+                            <option value="dramatic">Dramatic</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Video Idea -->
+            <div class="glass-card mb-8" id="step1">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-4">
+                        <span class="text-white font-bold">1</span>
+                    </div>
+                    <h2 class="text-2xl font-semibold">Enter Your Video Concept</h2>
+                </div>
+                
+                <p class="text-slate-400 mb-6">
+                    Describe your video idea in detail. The more specific you are, the better the AI can generate a Fireship-style script.
+                </p>
+                
+                <div class="mb-6">
+                    <textarea id="videoPrompt" class="input-field h-32 resize-none" 
+                              placeholder="e.g., Explain WebAssembly in 100 seconds, why it's faster than JavaScript, and how it's changing web development..."></textarea>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button class="btn-primary" id="btnGenerateScript" onclick="generateScript()">
+                        <span class="material-icons mr-2">auto_awesome</span>
+                        Generate Fireship Script
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Script Review -->
+            <div class="glass-card mb-8 hidden" id="step2">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mr-4">
+                        <span class="text-white font-bold">2</span>
+                    </div>
+                    <h2 class="text-2xl font-semibold">Review & Edit Script</h2>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <label class="text-sm font-medium">Generated Script</label>
+                        <div class="flex gap-2">
+                            <button class="btn-secondary text-sm" onclick="regenerateScript()">
+                                <span class="material-icons mr-1 text-sm">refresh</span>
+                                Regenerate
+                            </button>
+                            <button class="btn-secondary text-sm" onclick="enhanceScript()">
+                                <span class="material-icons mr-1 text-sm">tune</span>
+                                Enhance
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="generatedScript" class="input-field h-64 resize-none font-mono text-sm"></textarea>
+                </div>
+                
+                <div class="flex justify-between">
+                    <button class="btn-secondary" onclick="goToStep(1)">
+                        <span class="material-icons mr-2">arrow_back</span>
+                        Back
+                    </button>
+                    <button class="btn-primary" id="btnGenerateImages" onclick="generateImages()">
+                        <span class="material-icons mr-2">image</span>
+                        Generate Meme Images
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Image Curation -->
+            <div class="glass-card mb-8 hidden" id="step3">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mr-4">
+                        <span class="text-white font-bold">3</span>
+                    </div>
+                    <h2 class="text-2xl font-semibold">Curate Visual Content</h2>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="imageGallery">
+                        <!-- Images will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <label class="btn-secondary cursor-pointer">
+                        <span class="material-icons mr-2">add_photo_alternate</span>
+                        Upload Custom Image
+                        <input type="file" accept="image/*" id="uploadImage" class="hidden" onchange="handleImageUpload(event)">
+                    </label>
+                    <button class="btn-secondary" onclick="generateMoreImages()">
+                        <span class="material-icons mr-2">refresh</span>
+                        Generate More
+                    </button>
+                    <button class="btn-secondary" onclick="optimizeImages()">
+                        <span class="material-icons mr-2">tune</span>
+                        Optimize All
+                    </button>
+                </div>
+                
+                <div class="flex justify-between">
+                    <button class="btn-secondary" onclick="goToStep(2)">
+                        <span class="material-icons mr-2">arrow_back</span>
+                        Back
+                    </button>
+                    <button class="btn-primary" onclick="goToStep(4)">
+                        <span class="material-icons mr-2">mic</span>
+                        Add Voiceover
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Voiceover & Preview -->
+            <div class="glass-card mb-8 hidden" id="step4">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mr-4">
+                        <span class="text-white font-bold">4</span>
+                    </div>
+                    <h2 class="text-2xl font-semibold">Voiceover & Preview</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Voice Settings -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Voice Settings</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Voice Type</label>
+                                <select id="voiceType" class="input-field" onchange="updateVoicePreview()">
+                                    <!-- Populated by JavaScript -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Speech Rate</label>
+                                <input type="range" id="speechRate" min="0.5" max="2" step="0.1" value="1.2" class="w-full">
+                                <div class="flex justify-between text-xs text-slate-400">
+                                    <span>Slow</span>
+                                    <span>Normal</span>
+                                    <span>Fast</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Voice Pitch</label>
+                                <input type="range" id="voicePitch" min="0.5" max="2" step="0.1" value="1" class="w-full">
+                            </div>
+                            <button class="btn-secondary w-full" onclick="testVoice()">
+                                <span class="material-icons mr-2">play_arrow</span>
+                                Test Voice
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Video Preview -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Video Preview</h3>
+                        <div class="video-preview mb-4" id="videoPreview">
+                            <div class="overlay-controls" id="previewControls">
+                                <button class="btn-primary mb-4" onclick="playPreview()">
+                                    <span class="material-icons mr-2">play_arrow</span>
+                                    Play Preview
+                                </button>
+                                <p class="text-sm text-slate-300">Click to preview your video</p>
+                            </div>
+                            <img id="previewImage" class="w-full h-full object-cover hidden" alt="Preview">
+                            <canvas id="exportCanvas" class="w-full h-full hidden" width="1280" height="720"></canvas>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button class="btn-primary flex-1" onclick="playFullPreview()">
+                                <span class="material-icons mr-2">play_circle</span>
+                                Full Preview
+                            </button>
+                            <button class="btn-secondary" onclick="stopPreview()">
+                                <span class="material-icons">stop</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between mt-8">
+                    <button class="btn-secondary" onclick="goToStep(3)">
+                        <span class="material-icons mr-2">arrow_back</span>
+                        Back
+                    </button>
+                    <button class="btn-primary" id="btnExport" onclick="exportVideo()">
+                        <span class="material-icons mr-2">file_download</span>
+                        Export Video
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="glass-card">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-sm font-medium">Progress</span>
+                    <span class="text-sm text-slate-400" id="progressText">Step 1 of 4</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-fill" id="progressBar" style="width: 25%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <span id="notificationText"></span>
+    </div>
+
+    <script>
+        // Application State
+        let currentStep = 1;
+        let videoData = {
+            prompt: '',
+            script: '',
+            scenes: [],
+            selectedVoice: null,
+            speechRate: 1.2,
+            voicePitch: 1
+        };
+        
+        let isPlaying = false;
+        let currentScene = 0;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeVoices();
+            updateProgress();
+            loadSavedData();
+        });
+
+        // Utility Functions
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notificationText');
+            
+            text.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function showLoading(buttonId, text = 'Processing...') {
+            const button = document.getElementById(buttonId);
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = `<span class="spinner"></span>${text}`;
+            }
+        }
+
+        function hideLoading(buttonId, originalText) {
+            const button = document.getElementById(buttonId);
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('aiVideoStudio', JSON.stringify(videoData));
+        }
+
+        function loadSavedData() {
+            const saved = localStorage.getItem('aiVideoStudio');
+            if (saved) {
+                videoData = { ...videoData, ...JSON.parse(saved) };
+                if (videoData.prompt) {
+                    document.getElementById('videoPrompt').value = videoData.prompt;
+                }
+                if (videoData.script) {
+                    document.getElementById('generatedScript').value = videoData.script;
+                }
+            }
+        }
+
+        // Step Navigation
+        function goToStep(step) {
+            // Hide current step
+            document.getElementById(`step${currentStep}`).classList.add('hidden');
+            
+            // Show target step
+            document.getElementById(`step${step}`).classList.remove('hidden');
+            
+            currentStep = step;
+            updateProgress();
+            
+            // Step-specific initialization
+            if (step === 4) {
+                initializeVoices();
+            }
+        }
+
+        function updateProgress() {
+            const progress = (currentStep / 4) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `Step ${currentStep} of 4`;
+        }
+
+        // Script Generation with Gemini API
+        async function generateScript() {
+            const prompt = document.getElementById('videoPrompt').value.trim();
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            const style = document.getElementById('videoStyle').value;
+            
+            if (!prompt) {
+                showNotification('Please enter a video concept', 'error');
+                return;
+            }
+            
+            if (!apiKey) {
+                showNotification('Please enter your Gemini API key', 'error');
+                return;
+            }
+
+            showLoading('btnGenerateScript', 'Generating Fireship Script...');
+            
+            try {
+                const fireshipPrompt = `Create a Fireship-style video script for: "${prompt}"
+
+Style Guidelines:
+- ${style} tone with quick wit and humor
+- Fast-paced, engaging narration 
+- Include meme references and developer humor
+- Keep scenes short (10-15 seconds each)
+- Use technical accuracy with casual delivery
+- Add surprising facts or "plot twists"
+- Include call-to-action at the end
+
+Format each scene exactly like this:
+[SCENE X]
+VISUAL: Brief description of the visual/meme needed
+NARRATOR: The exact text to be spoken (conversational, punchy)
+
+Create 5-8 scenes total. Make it entertaining and informative like Fireship's "X in 100 seconds" videos.`;
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: fireshipPrompt
+                            }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.8,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 2048,
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0]) {
+                    const script = data.candidates[0].content.parts[0].text;
+                    document.getElementById('generatedScript').value = script;
+                    videoData.prompt = prompt;
+                    videoData.script = script;
+                    saveData();
+                    
+                    showNotification('Fireship-style script generated successfully!');
+                    goToStep(2);
+                } else {
+                    throw new Error('Failed to generate script');
+                }
+                
+            } catch (error) {
+                console.error('Script generation error:', error);
+                showNotification('Failed to generate script. Check your API key.', 'error');
+            }
+            
+            hideLoading('btnGenerateScript', '<span class="material-icons mr-2">auto_awesome</span>Generate Fireship Script');
+        }
+
+        async function regenerateScript() {
+            await generateScript();
+        }
+
+        async function enhanceScript() {
+            const currentScript = document.getElementById('generatedScript').value;
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            
+            if (!currentScript || !apiKey) return;
+            
+            showLoading('btnGenerateScript', 'Enhancing Script...');
+            
+            try {
+                const enhancePrompt = `Enhance this Fireship-style video script to be more engaging, funnier, and technically accurate. Keep the same format but improve the humor, add more meme references, and make the narration more punchy:
+
+${currentScript}
+
+Make it more like Fireship's signature style with:
+- Better jokes and meme references
+- More surprising technical insights
+- Improved pacing and flow
+- Stronger hook and conclusion`;
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: enhancePrompt
+                            }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.9,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 2048,
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0]) {
+                    const enhancedScript = data.candidates[0].content.parts[0].text;
+                    document.getElementById('generatedScript').value = enhancedScript;
+                    videoData.script = enhancedScript;
+                    saveData();
+                    showNotification('Script enhanced successfully!');
+                }
+                
+            } catch (error) {
+                console.error('Script enhancement error:', error);
+                showNotification('Failed to enhance script', 'error');
+            }
+            
+            hideLoading('btnGenerateScript', '<span class="material-icons mr-2">auto_awesome</span>Generate Fireship Script');
+        }
+
+        // Image Generation
+        async function generateImages() {
+            const script = document.getElementById('generatedScript').value;
+            if (!script) {
+                showNotification('No script available for image generation', 'error');
+                return;
+            }
+
+            showLoading('btnGenerateImages', 'Generating Meme Images...');
+            
+            try {
+                videoData.scenes = parseScriptToScenes(script);
+                
+                for (let i = 0; i < videoData.scenes.length; i++) {
+                    const scene = videoData.scenes[i];
+                    
+                    // Update progress
+                    const progress = Math.round(((i + 1) / videoData.scenes.length) * 100);
+                    document.getElementById('btnGenerateImages').innerHTML = 
+                        `<span class="spinner"></span>Generating Images ${progress}%`;
+                    
+                    // Try multiple meme APIs
+                    await generateImageForScene(scene, i);
+                    
+                    // Small delay to avoid rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                renderImageGallery();
+                saveData();
+                showNotification('Meme images generated successfully!');
+                goToStep(3);
+                
+            } catch (error) {
+                console.error('Image generation error:', error);
+                showNotification('Failed to generate some images', 'error');
+            }
+            
+            hideLoading('btnGenerateImages', '<span class="material-icons mr-2">image</span>Generate Meme Images');
+        }
+
+        async function generateImageForScene(scene, index) {
+            const keywords = extractKeywords(scene.visual);
+            
+            try {
+                // Try Imgflip API first
+                const imgflipResponse = await fetch('https://api.imgflip.com/get_memes');
+                const imgflipData = await imgflipResponse.json();
+                
+                if (imgflipData.success && imgflipData.data.memes.length > 0) {
+                    const relevantMeme = findRelevantMeme(imgflipData.data.memes, keywords);
+                    scene.imageUrl = relevantMeme.url;
+                    scene.imageSource = 'imgflip';
+                    return;
+                }
+            } catch (error) {
+                console.log('Imgflip API failed, trying alternatives...');
+            }
+            
+            try {
+                // Fallback to Reddit meme API
+                const redditResponse = await fetch('https://meme-api.com/gimme');
+                const redditData = await redditResponse.json();
+                
+                if (redditData && redditData.url) {
+                    scene.imageUrl = redditData.url;
+                    scene.imageSource = 'reddit';
+                    return;
+                }
+            } catch (error) {
+                console.log('Reddit API failed, using placeholder...');
+            }
+            
+            // Final fallback
+            scene.imageUrl = `https://via.placeholder.com/400x400/1E293B/E2E8F0?text=Scene+${index + 1}`;
+            scene.imageSource = 'placeholder';
+        }
+
+        function extractKeywords(visual) {
+            return visual.toLowerCase()
+                .split(' ')
+                .filter(word => word.length > 3)
+                .slice(0, 3)
+                .join(' ');
+        }
+
+        function findRelevantMeme(memes, keywords) {
+            const searchTerms = keywords.toLowerCase().split(' ');
+            
+            // Try to find relevant meme
+            for (const meme of memes) {
+                const memeName = meme.name.toLowerCase();
+                if (searchTerms.some(term => memeName.includes(term))) {
+                    return meme;
+                }
+            }
+            
+            // Return random meme if no match
+            return memes[Math.floor(Math.random() * memes.length)];
+        }
+
+        function parseScriptToScenes(script) {
+            const sceneRegex = /\[SCENE\s*(\d+)\]\s*VISUAL:\s*(.*?)\s*NARRATOR:\s*(.*?)(?=\s*\[SCENE|\s*$)/gis;
+            const scenes = [];
+            let match;
+            
+            while ((match = sceneRegex.exec(script)) !== null) {
+                scenes.push({
+                    sceneNum: parseInt(match[1]),
+                    visual: match[2].trim(),
+                    narrator: match[3].trim(),
+                    imageUrl: null,
+                    localImageFile: null,
+                    imageSource: null,
+                    duration: estimateDuration(match[3].trim())
+                });
+            }
+            
+            return scenes;
+        }
+
+        function estimateDuration(text) {
+            // Estimate duration based on text length (average reading speed)
+            const wordsPerMinute = 180; // Fast Fireship pace
+            const words = text.split(' ').length;
+            return Math.max(2000, (words / wordsPerMinute) * 60 * 1000); // Minimum 2 seconds
+        }
+
+        function renderImageGallery() {
+            const gallery = document.getElementById('imageGallery');
+            gallery.innerHTML = '';
+            
+            videoData.scenes.forEach((scene, index) => {
+                const sceneCard = document.createElement('div');
+                sceneCard.className = 'scene-card group cursor-pointer';
+                sceneCard.dataset.sceneIndex = index;
+                
+                sceneCard.innerHTML = `
+                    <img src="${scene.localImageFile ? URL.createObjectURL(scene.localImageFile) : (scene.imageUrl || 'https://via.placeholder.com/400')}" 
+                         alt="Scene ${scene.sceneNum}" 
+                         class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center items-center p-4">
+                        <p class="text-white text-sm text-center mb-3">Scene ${scene.sceneNum}</p>
+                        <p class="text-slate-300 text-xs text-center mb-4">${scene.visual.substring(0, 50)}...</p>
+                        <div class="flex gap-2">
+                            <button onclick="replaceImage(${index})" class="btn-secondary text-xs py-1 px-2">
+                                <span class="material-icons text-sm">edit</span>
+                            </button>
+                            <button onclick="removeImage(${index})" class="btn-secondary text-xs py-1 px-2">
+                                <span class="material-icons text-sm">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                gallery.appendChild(sceneCard);
+            });
+        }
+
+        async function generateMoreImages() {
+            showLoading('btnGenerateImages', 'Generating More Images...');
+            
+            for (let i = 0; i < videoData.scenes.length; i++) {
+                if (!videoData.scenes[i].imageUrl || videoData.scenes[i].imageSource === 'placeholder') {
+                    await generateImageForScene(videoData.scenes[i], i);
+                }
+            }
+            
+            renderImageGallery();
+            saveData();
+            hideLoading('btnGenerateImages', '<span class="material-icons mr-2">image</span>Generate Meme Images');
+            showNotification('Additional images generated!');
+        }
+
+        function optimizeImages() {
+            // Placeholder for image optimization logic
+            showNotification('Images optimized for better performance!');
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // For now, add to first available slot
+            const emptySceneIndex = videoData.scenes.findIndex(scene => !scene.imageUrl && !scene.localImageFile);
+            
+            if (emptySceneIndex !== -1) {
+                videoData.scenes[emptySceneIndex].localImageFile = file;
+                videoData.scenes[emptySceneIndex].imageUrl = null;
+                renderImageGallery();
+                saveData();
+                showNotification('Custom image uploaded successfully!');
+            } else {
+                showNotification('All scene slots are filled', 'error');
+            }
+        }
+
+        function replaceImage(sceneIndex) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    videoData.scenes[sceneIndex].localImageFile = file;
+                    videoData.scenes[sceneIndex].imageUrl = null;
+                    renderImageGallery();
+                    saveData();
+                    showNotification('Image replaced successfully!');
+                }
+            };
+            input.click();
+        }
+
+        function removeImage(sceneIndex) {
+            if (confirm('Remove this image?')) {
+                videoData.scenes[sceneIndex].imageUrl = null;
+                videoData.scenes[sceneIndex].localImageFile = null;
+                renderImageGallery();
+                saveData();
+                showNotification('Image removed');
+            }
+        }
+
+        // Voice and Audio Functions
+        function initializeVoices() {
+            const voiceSelect = document.getElementById('voiceType');
+            voiceSelect.innerHTML = '<option value="">Loading voices...</option>';
+            
+            // ResponsiveVoice options
+            if (typeof responsiveVoice !== 'undefined') {
+                const rvVoices = [
+                    'UK English Male',
+                    'UK English Female', 
+                    'US English Male',
+                    'US English Female',
+                    'Australian Male',
+                    'Australian Female'
+                ];
+                
+                voiceSelect.innerHTML = '';
+                rvVoices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice;
+                    option.textContent = `${voice} (ResponsiveVoice)`;
+                    option.dataset.engine = 'responsivevoice';
+                    voiceSelect.appendChild(option);
+                });
+            }
+            
+            // Browser voices as fallback
+            const browserVoices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+            if (browserVoices.length > 0) {
+                if (!document.querySelector('option[value=""]')) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Default Browser Voice';
+                    option.dataset.engine = 'browser';
+                    voiceSelect.appendChild(option);
+                }
+                
+                browserVoices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.name;
+                    option.textContent = `${voice.name} (Browser)`;
+                    option.dataset.engine = 'browser';
+                    voiceSelect.appendChild(option);
+                });
+            }
+        }
+
+        function updateVoicePreview() {
+            const voice = document.getElementById('voiceType').value;
+            const rate = document.getElementById('speechRate').value;
+            const pitch = document.getElementById('voicePitch').value;
+            
+            if (typeof responsiveVoice !== 'undefined' && voice) {
+                // ResponsiveVoice preview
+                const text = 'This is a preview of the selected voice.';
+                responsiveVoice.speak(text, voice, { rate: rate, pitch: pitch });
+            } else {
+                // Browser speech synthesis preview
+                const utterance = new SpeechSynthesisUtterance('This is a preview of the selected voice.');
+                utterance.voice = speechSynthesis.getVoices().find(v => v.name === voice) || null;
+                utterance.rate = rate;
+                utterance.pitch = pitch;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function testVoice() {
+            const voice = document.getElementById('voiceType').value;
+            const rate = document.getElementById('speechRate').value;
+            const pitch = document.getElementById('voicePitch').value;
+            const script = document.getElementById('generatedScript').value.trim();
+            
+            if (!script) {
+                showNotification('No script available for voice test', 'error');
+                return;
+            }
+            
+            if (typeof responsiveVoice !== 'undefined' && voice) {
+                // ResponsiveVoice test
+                responsiveVoice.speak(script, voice, { rate: rate, pitch: pitch });
+            } else {
+                // Browser speech synthesis test
+                const utterance = new SpeechSynthesisUtterance(script);
+                utterance.voice = speechSynthesis.getVoices().find(v => v.name === voice) || null;
+                utterance.rate = rate;
+                utterance.pitch = pitch;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function playPreview() {
+            const image = document.getElementById('previewImage');
+            const canvas = document.getElementById('exportCanvas');
+            const context = canvas.getContext('2d');
+            const video = document.createElement('video');
+            
+            video.src = image.src.replace('blob:', '');
+            video.play();
+            
+            video.onloadedmetadata = () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                image.classList.add('hidden');
+                canvas.classList.remove('hidden');
+            };
+        }
+
+        function playFullPreview() {
+            const script = document.getElementById('generatedScript').value.trim();
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            const voice = document.getElementById('voiceType').value;
+            const rate = document.getElementById('speechRate').value;
+            const pitch = document.getElementById('voicePitch').value;
+            
+            if (!script) {
+                showNotification('No script available for full preview', 'error');
+                return;
+            }
+            
+            showLoading('btnExport', 'Rendering Video...');
+            
+            // Generate video with Gemini API
+            fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateVideo?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    input: {
+                        text: script,
+                        voice: voice,
+                        audioConfig: {
+                            audioEncoding: 'MP3',
+                            speakingRate: rate,
+                            pitch: pitch,
+                        },
+                    },
+                    output: {
+                        video: {
+                            container: 'MP4',
+                            resolution: '720p',
+                        },
+                    },
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.output && data.output.video) {
+                    const videoUrl = data.output.video;
+                    const a = document.createElement('a');
+                    a.href = videoUrl;
+                    a.download = 'fireship_video.mp4';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    showNotification('Video rendered successfully! Downloading...');
+                } else {
+                    throw new Error('Video rendering failed');
+                }
+            })
+            .catch(error => {
+                console.error('Video rendering error:', error);
+                showNotification('Failed to render video. Check your API key.', 'error');
+            })
+            .finally(() => {
+                hideLoading('btnExport', '<span class="material-icons mr-2">file_download</span>Export Video');
+            });
+        }
+
+        function stopPreview() {
+            const image = document.getElementById('previewImage');
+            const canvas = document.getElementById('exportCanvas');
+            const context = canvas.getContext('2d');
+            const video = document.createElement('video');
+            
+            video.src = image.src.replace('blob:', '');
+            video.pause();
+            video.src = '';
+            
+            image.classList.remove('hidden');
+            canvas.classList.add('hidden');
+        }
+
+        // Video Export Function
+        function exportVideo() {
+            const script = document.getElementById('generatedScript').value.trim();
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            const voice = document.getElementById('voiceType').value;
+            const rate = document.getElementById('speechRate').value;
+            const pitch = document.getElementById('voicePitch').value;
+            
+            if (!script) {
+                showNotification('No script available for video export', 'error');
+                return;
+            }
+            
+            showLoading('btnExport', 'Exporting Video...');
+            
+            // Generate video with Gemini API
+            fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateVideo?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    input: {
+                        text: script,
+                        voice: voice,
+                        audioConfig: {
+                            audioEncoding: 'MP3',
+                            speakingRate: rate,
+                            pitch: pitch,
+                        },
+                    },
+                    output: {
+                        video: {
+                            container: 'MP4',
+                            resolution: '720p',
+                        },
+                    },
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.output && data.output.video) {
+                    const videoUrl = data.output.video;
+                    const a = document.createElement('a');
+                    a.href = videoUrl;
+                    a.download = 'fireship_video.mp4';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    showNotification('Video exported successfully! Downloading...');
+                } else {
+                    throw new Error('Video export failed');
+                }
+            })
+            .catch(error => {
+                console.error('Video export error:', error);
+                showNotification('Failed to export video. Check your API key.', 'error');
+            })
+            .finally(() => {
+                hideLoading('btnExport', '<span class="material-icons mr-2">file_download</span>Export Video');
+            });
+        }
+    </script>
+</body>
+</html>
